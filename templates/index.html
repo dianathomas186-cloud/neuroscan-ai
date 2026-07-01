@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Tumor Classification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="brain-icon">🧠</div>
+        <h1>Brain Tumor Classification</h1>
+        <p>Using CNN and Transfer Learning (ResNet50)</p>
+    </div>
+
+    <div class="info-cards">
+        <div class="info-card" style="border-top: 4px solid #FF6B6B;">
+            <span class="card-icon">🔴</span>
+            <h3>Glioma</h3>
+            <p>Brain/spine glial cell tumor</p>
+        </div>
+        <div class="info-card" style="border-top: 4px solid #FFD93D;">
+            <span class="card-icon">🟡</span>
+            <h3>Meningioma</h3>
+            <p>Brain membrane tumor</p>
+        </div>
+        <div class="info-card" style="border-top: 4px solid #6BCB77;">
+            <span class="card-icon">🟢</span>
+            <h3>No Tumor</h3>
+            <p>Healthy brain scan</p>
+        </div>
+        <div class="info-card" style="border-top: 4px solid #4D96FF;">
+            <span class="card-icon">🔵</span>
+            <h3>Pituitary</h3>
+            <p>Pituitary gland tumor</p>
+        </div>
+    </div>
+
+    <div class="upload-card">
+        <h2>Upload MRI Scan</h2>
+        <p>Upload a brain MRI image to classify the tumor type</p>
+
+        {% if error %}
+        <div class="error-msg">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <form action="/predict"
+              method="POST"
+              enctype="multipart/form-data"
+              id="uploadForm">
+
+            <input type="file"
+                   name="file"
+                   id="fileInput"
+                   accept=".jpg,.jpeg,.png"
+                   style="display:none"
+                   onchange="previewImage(this)">
+
+            <!-- Upload Area -->
+            <div class="upload-area"
+                 id="uploadArea"
+                 onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Click to upload or drag and drop</p>
+                <p class="upload-subtext">Supports JPG, JPEG, PNG</p>
+            </div>
+
+            <!-- Success Message -->
+            <div id="uploadSuccess" 
+                 style="display:none; margin-bottom:20px;">
+                <div style="background:rgba(107,203,119,0.15);
+                            border:2px solid #6BCB77;
+                            border-radius:12px;
+                            padding:15px 20px;
+                            text-align:center;">
+                    <p style="color:#6BCB77;
+                              font-size:1.1rem;
+                              font-weight:600;">
+                        ✅ Image Uploaded Successfully!
+                    </p>
+                    <p style="color:#a0aec0;
+                              font-size:0.85rem;
+                              margin-top:5px;">
+                        📁 <span id="uploadedFileName"></span>
+                    </p>
+                    <p style="color:#a0aec0;
+                              font-size:0.80rem;
+                              margin-top:3px;">
+                        Click Analyze below to get prediction
+                    </p>
+                </div>
+            </div>
+
+            <!-- Image Preview -->
+            <div id="previewContainer"
+                 style="display:none;
+                        margin-bottom:20px;
+                        text-align:center;">
+                <img id="previewImg"
+                     src=""
+                     alt="Preview"
+                     style="max-width:280px;
+                            max-height:280px;
+                            border-radius:12px;
+                            border:3px solid #6BCB77;
+                            object-fit:cover;">
+            </div>
+
+            <!-- Analyze Button - Always Visible -->
+            <div style="text-align:center; margin-top:25px;">
+                <button type="submit"
+                        id="predictBtn"
+                        style="background:linear-gradient(135deg,#4D96FF,#6BCB77);
+                               color:white;
+                               border:none;
+                               padding:15px 60px;
+                               border-radius:50px;
+                               font-size:1.1rem;
+                               font-weight:600;
+                               cursor:pointer;
+                               width:100%;
+                               max-width:350px;">
+                    🔍 Analyze MRI Scan
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>Brain Tumor Classification Using CNN and Transfer Learning</p>
+        <p>Built with TensorFlow, Keras, ResNet50 & Flask</p>
+    </div>
+
+</div>
+
+<script>
+function previewImage(input) {
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('previewContainer').style.display = 'block';
+            document.getElementById('uploadedFileName').textContent = file.name;
+            document.getElementById('uploadSuccess').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select an image first!');
+        return false;
+    }
+    document.getElementById('predictBtn').textContent = '⏳ Analyzing...';
+});
+</script>
+
+</body>
+</html>

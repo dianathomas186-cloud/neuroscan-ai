@@ -1,0 +1,15 @@
+GLIOMA SUMMARY:
+Gliomas are primary brain tumors that originate in the glial cells (astrocytes, oligodendrocytes, and ependymal cells) which support and protect neurons. They are categorized into grades I through IV (with Grade IV being Glioblastoma).
+
+COMMON SYMPTOMS:
+- Headaches (often worse in the morning or during coughing)
+- Seizures
+- Gradual speech difficulties
+- Cognitive decline, confusion, or memory issues
+- Weakness or numbness on one side of the body
+
+TREATMENT OPTIONS:
+- Surgical resection: Maximize safe removal.
+- Radiation therapy: Often combined with chemotherapy.
+- Chemotherapy: Commonly Temozolomide (TMZ).
+- Tumor Treating Fields (TTFields): For newly diagnosed glioblastomas.

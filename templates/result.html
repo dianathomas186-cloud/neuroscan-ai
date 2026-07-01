@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result - Brain Tumor Classification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Library to parse RAG markdown text into beautiful HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- PDF generation libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Self-contained styles for the RAG report and Chat Section -->
+    <style>
+        .rag-report-card {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 8px;
+            background-color: #fafbfc;
+            border: 1px solid #e1e4e8;
+            text-align: left;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .rag-report-card h3 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: #2c3e50;
+            border-bottom: 2px solid {{ result.class_color }};
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .rag-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #444;
+        }
+        .rag-content h1, .rag-content h2, .rag-content h3, .rag-content h4 {
+            color: #1a252f;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .rag-content h1 { font-size: 1.3rem; }
+        .rag-content h2 { font-size: 1.15rem; }
+        .rag-content h3 { font-size: 1.05rem; }
+        .rag-content ul, .rag-content ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+            padding-left: 5px;
+        }
+        .rag-content li {
+            margin-bottom: 6px;
+        }
+        .rag-content strong {
+            color: #1a252f;
+        }
+        .rag-content hr {
+            border: 0;
+            height: 1px;
+            background: #e1e4e8;
+            margin: 20px 0;
+        }
+
+        /* --- Download Button --- */
+        .download-btn-wrapper {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .download-pdf-btn {
+            border: none;
+            color: white;
+            padding: 13px 35px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            letter-spacing: 0.5px;
+        }
+        .download-pdf-btn:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+        .download-pdf-btn:active {
+            transform: translateY(0);
+        }
+
+        /* --- Chat box styles --- */
+        .chat-container-card {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 8px;
+            background-color: #fafbfc;
+            border: 1px solid #e1e4e8;
+            text-align: left;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .chat-container-card h3 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: #2c3e50;
+            border-bottom: 2px solid {{ result.class_color }};
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e1e4e8;
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-width: 85%;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .assistant-message {
+            background-color: #f1f3f5;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 2px;
+        }
+        .assistant-message ul, .assistant-message ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .user-message {
+            background-color: {{ result.class_color }};
+            color: #ffffff;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+        }
+        .user-message strong {
+            color: #ffffff !important;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-area input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .chat-input-area input:focus {
+            border-color: {{ result.class_color }};
+        }
+        .chat-send-btn {
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .chat-send-btn:hover {
+            opacity: 0.9;
+        }
+        .typing-indicator {
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="brain-icon">🧠</div>
+        <h1>Brain Tumor Classification</h1>
+        <p>Prediction Result</p>
+    </div>
+
+    <div class="result-card" 
+         style="border-top: 6px solid {{ result.class_color }};">
+
+        <div class="result-top">
+            <!-- Original MRI Image -->
+            <div class="result-image-container">
+                <h3>📷 Original MRI Scan</h3>
+                <img src="{{ url_for('static', filename=result.image_path) }}"
+                     alt="MRI Scan" class="result-image">
+            </div>
+
+            <!-- Grad-CAM Image -->
+            <div class="result-image-container">
+                <h3>🔥 Grad-CAM Heatmap</h3>
+                {% if result.gradcam_path %}
+                <img src="{{ url_for('static', filename=result.gradcam_path) }}"
+                     alt="Grad-CAM" class="result-image">
+                <p class="gradcam-note">
+                    🔴 Red/Yellow areas = Region model focused on
+                </p>
+                {% else %}
+                <p>Grad-CAM not available</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Prediction Badge -->
+        <div class="prediction-badge"
+             style="background: {{ result.class_color }}20;
+                    border: 2px solid {{ result.class_color }};">
+            <span class="pred-icon">{{ result.class_icon }}</span>
+            <h2 style="color: {{ result.class_color }};">
+                {{ result.predicted_class.upper() }}
+            </h2>
+            <p class="confidence-text">
+                Confidence: <strong>{{ result.confidence }}%</strong>
+            </p>
+        </div>
+
+        <!-- Class Description -->
+        <div class="class-description">
+            <h4>About this condition:</h4>
+            <p>{{ result.class_info }}</p>
+        </div>
+
+        <!-- Confidence Meter -->
+        <div class="confidence-meter">
+            <p>Confidence Level</p>
+            <div class="meter-bar">
+                <div class="meter-fill"
+                     style="width: {{ result.confidence }}%;
+                            background: {{ result.class_color }};">
+                </div>
+            </div>
+            <span>{{ result.confidence }}%</span>
+        </div>
+
+        <!-- All Probabilities -->
+        <div class="all-probs">
+            <h3>All Class Probabilities</h3>
+            <div class="prob-bars">
+                {% set colors = {
+                    'glioma': '#FF6B6B',
+                    'meningioma': '#FFD93D',
+                    'notumor': '#6BCB77',
+                    'pituitary': '#4D96FF'
+                } %}
+                {% set icons = {
+                    'glioma': '🔴',
+                    'meningioma': '🟡',
+                    'notumor': '🟢',
+                    'pituitary': '🔵'
+                } %}
+                {% for class_name, prob in result.all_probs.items() %}
+                <div class="prob-row">
+                    <span class="prob-label">
+                        {{ icons[class_name] }} {{ class_name.upper() }}
+                    </span>
+                    <div class="prob-bar-container">
+                        <div class="prob-bar-fill"
+                             style="width: {{ prob }}%;
+                                    background: {{ colors[class_name] }};">
+                        </div>
+                    </div>
+                    <span class="prob-value">{{ prob }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RAG Clinical Report Section -->
+        <div class="rag-report-card">
+            <h3>📄 AI Clinical Report (Retrieval-Augmented)</h3>
+            <div id="rag-report-content" class="rag-content">
+                <!-- Rendered Markdown goes here -->
+            </div>
+        </div>
+
+        <!-- ✅ NEW: Download PDF Button -->
+        <div class="download-btn-wrapper">
+            <button onclick="downloadPDF()" class="download-pdf-btn"
+                    style="background-color: {{ result.class_color }};">
+                📥 Download Report as PDF
+            </button>
+        </div>
+
+        <!-- Interactive Chat Box -->
+        <div class="chat-container-card">
+            <h3>💬 Chat with Medical Assistant</h3>
+            <p style="font-size: 0.85rem; color: #666; margin-top: -10px; margin-bottom: 15px;">
+                Ask specific questions about symptoms, prognosis, and treatment recommendations linked to our knowledge base.
+            </p>
+            <div id="chat-messages" class="chat-messages">
+                <div class="message assistant-message">
+                    <strong>Assistant:</strong> Hello! I am your clinical assistant. Feel free to ask me questions regarding standard medical guidelines, symptoms, and care procedures related to the scan diagnosis.
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask a question (e.g. What are the common treatment pathways for this?)" autocomplete="off">
+                <button id="chat-send-btn" class="chat-send-btn" style="background-color: {{ result.class_color }};">Send</button>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            ⚠️ <strong>Medical Disclaimer:</strong>
+            This prediction is generated by an AI model for
+            educational purposes only. Please consult a qualified
+            medical professional for actual diagnosis.
+        </div>
+
+    </div>
+
+    <div class="action-buttons">
+        <a href="/" class="btn-primary">🔍 Analyze Another Scan</a>
+    </div>
+
+    <div class="footer">
+        <p>Brain Tumor Classification Using CNN and Transfer Learning</p>
+        <p>Built with TensorFlow, Keras, ResNet50 & Flask</p>
+    </div>
+
+</div>
+
+<!-- Scripts for Markdown Rendering, Interactive Chat, and PDF Download -->
+<script>
+    // 1. Render initial Markdown Report
+    const rawMarkdown = `{{ result.rag_report | safe }}`;
+    document.getElementById('rag-report-content').innerHTML = marked.parse(rawMarkdown);
+
+    // 2. Chat Box Logic
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+
+    function appendMessage(sender, text, isUser = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+        
+        const senderLabel = document.createElement('strong');
+        senderLabel.textContent = `${sender}: `;
+        msgDiv.appendChild(senderLabel);
+
+        const contentSpan = document.createElement('span');
+        if (isUser) {
+            contentSpan.textContent = text;
+        } else {
+            contentSpan.innerHTML = marked.parse(text);
+        }
+        msgDiv.appendChild(contentSpan);
+        
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendQuestion() {
+        const question = chatInput.value.trim();
+        if (!question) return;
+
+        chatInput.value = '';
+        appendMessage('You', question, true);
+
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message assistant-message typing-indicator';
+        typingDiv.id = 'typing-indicator';
+        typingDiv.textContent = 'Assistant is typing...';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question: question,
+                    predicted_class: "{{ result.predicted_class }}"
+                })
+            });
+            const data = await response.json();
+            
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+
+            if (data.answer) {
+                appendMessage('Assistant', data.answer);
+            } else if (data.error) {
+                appendMessage('Assistant', `Error: ${data.error}`);
+            } else {
+                appendMessage('Assistant', 'Something went wrong. Please try again.');
+            }
+        } catch (error) {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+            appendMessage('Assistant', `Connection error: ${error.message}`);
+        }
+    }
+
+    chatSendBtn.addEventListener('click', sendQuestion);
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendQuestion();
+    });
+
+    // ✅ 3. PDF Download Function
+    async function downloadPDF() {
+        const btn = document.querySelector('.download-pdf-btn');
+        btn.textContent = '⏳ Generating PDF...';
+        btn.disabled = true;
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const pageW  = doc.internal.pageSize.getWidth();
+            const pageH  = doc.internal.pageSize.getHeight();
+            const margin = 14;
+            let y = 15;
+
+            // ── Header ──────────────────────────────────────────
+            doc.setFillColor(44, 62, 80);
+            doc.rect(0, 0, pageW, 22, 'F');
+            doc.setFontSize(16);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NeuroScan AI — Clinical Report', pageW / 2, 14, { align: 'center' });
+            y = 30;
+
+            // ── Date ────────────────────────────────────────────
+            doc.setFontSize(9);
+            doc.setTextColor(120, 120, 120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Report generated: ${new Date().toLocaleString()}`, pageW / 2, y, { align: 'center' });
+            y += 10;
+
+            // ── Prediction Summary Box ───────────────────────────
+            doc.setFillColor(245, 247, 250);
+            doc.roundedRect(margin, y, pageW - margin * 2, 32, 4, 4, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.roundedRect(margin, y, pageW - margin * 2, 32, 4, 4, 'S');
+
+            doc.setFontSize(11);
+            doc.setTextColor(44, 62, 80);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Prediction Summary', margin + 5, y + 9);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            doc.text(`Diagnosis   : {{ result.predicted_class.upper() }}`, margin + 5, y + 18);
+            doc.text(`Confidence  : {{ result.confidence }}%`, margin + 5, y + 26);
+            y += 40;
+
+            // ── Class Probabilities ──────────────────────────────
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(44, 62, 80);
+            doc.text('All Class Probabilities', margin, y);
+            y += 7;
+
+            const probs = [
+                {% for class_name, prob in result.all_probs.items() %}
+                { label: '{{ class_name.upper() }}', value: {{ prob }} },
+                {% endfor %}
+            ];
+
+            probs.forEach(item => {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(80, 80, 80);
+                doc.text(`${item.label}`, margin + 3, y);
+                doc.text(`${item.value}%`, pageW - margin - 3, y, { align: 'right' });
+
+                // Bar background
+                doc.setFillColor(230, 230, 230);
+                doc.roundedRect(margin + 30, y - 4, pageW - margin * 2 - 40, 5, 1, 1, 'F');
+                // Bar fill
+                doc.setFillColor(100, 149, 237);
+                const barWidth = ((pageW - margin * 2 - 40) * item.value) / 100;
+                doc.roundedRect(margin + 30, y - 4, barWidth, 5, 1, 1, 'F');
+
+                y += 9;
+            });
+            y += 5;
+
+            // ── About Condition ──────────────────────────────────
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(44, 62, 80);
+            doc.text('About This Condition', margin, y);
+            y += 7;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.setTextColor(70, 70, 70);
+            const infoText  = `{{ result.class_info }}`;
+            const infoLines = doc.splitTextToSize(infoText, pageW - margin * 2);
+            doc.text(infoLines, margin, y);
+            y += infoLines.length * 5 + 10;
+
+            // ── AI Clinical Report ───────────────────────────────
+            if (y > pageH - 40) { doc.addPage(); y = 15; }
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(44, 62, 80);
+            doc.text('AI Clinical Report', margin, y);
+            y += 2;
+            doc.setDrawColor(180, 180, 180);
+            doc.line(margin, y + 1, pageW - margin, y + 1);
+            y += 7;
+
+            // Strip markdown for clean PDF text
+            const rawReport = `{{ result.rag_report | replace('\n', '\n') | safe }}`;
+            const cleanReport = rawReport
+                .replace(/#{1,6}\s*/g, '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1')
+                .replace(/`{1,3}[^`]*`{1,3}/g, '')
+                .replace(/>\s*/g, '')
+                .replace(/---/g, '')
+                .trim();
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.setTextColor(70, 70, 70);
+
+            const reportLines = doc.splitTextToSize(cleanReport, pageW - margin * 2);
+            reportLines.forEach(line => {
+                if (y > pageH - 20) { doc.addPage(); y = 15; }
+                doc.text(line, margin, y);
+                y += 5.2;
+            });
+
+            // ── Disclaimer ───────────────────────────────────────
+            if (y > pageH - 25) { doc.addPage(); y = 15; }
+            y += 8;
+            doc.setFillColor(255, 248, 230);
+            const disclaimerText = 'Disclaimer: This report is generated by an AI model for educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified medical professional.';
+            const dLines = doc.splitTextToSize(disclaimerText, pageW - margin * 2 - 6);
+            doc.roundedRect(margin, y - 4, pageW - margin * 2, dLines.length * 5 + 8, 3, 3, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(160, 100, 0);
+            doc.text(dLines, margin + 3, y + 1);
+
+            // ── Footer on every page ─────────────────────────────
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(180, 180, 180);
+                doc.text('NeuroScan AI — Brain Tumor Classification', margin, pageH - 8);
+                doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 8, { align: 'right' });
+            }
+
+            doc.save('NeuroScan_Clinical_Report.pdf');
+
+        } catch (err) {
+            alert('PDF generation failed: ' + err.message);
+        } finally {
+            btn.textContent = '📥 Download Report as PDF';
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>

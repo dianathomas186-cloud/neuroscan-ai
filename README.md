@@ -1,2 +1,2 @@
 # brain tumor cnn
-Brain tumor MRI classifier with Grad-CAM and RAG chatbot
+Brain tumor MRI classifier with Grad-CAM and RAG 

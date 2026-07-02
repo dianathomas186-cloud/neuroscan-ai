@@ -10,7 +10,6 @@ NeuroScan AI is a Flask-based web application that classifies brain MRI scans in
 ## 📋 Table of Contents
 
 - [Features](#-features)
-- [Demo](#-demo)
 - [Tech Stack](#-tech-stack)
 - [Model Performance](#-model-performance)
 - [Dataset](#-dataset)

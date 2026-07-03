@@ -64,7 +64,8 @@ The model was trained and evaluated using transfer learning on a ResNet50 backbo
 
 ## 🗂️ Dataset
 
-- **Source:** [Brain Tumor MRI Dataset (Kaggle)](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset)
+- **Source:** [Brain Tumor MRI Dataset (Kaggle)]
+- (https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset)
 - **Size:** ~10,000 MRI images
 - **Classes:**
   - Glioma

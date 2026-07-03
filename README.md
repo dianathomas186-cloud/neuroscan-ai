@@ -170,4 +170,5 @@ neuroscan-ai/
 
 ## 🙏 Acknowledgements
 
-- [Brain Tumor MRI Dataset — Kaggle](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset)
+- [Brain Tumor MRI Dataset — Kaggle]
+- (https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset)

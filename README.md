@@ -121,8 +121,7 @@ neuroscan-ai/
    ```
 
 4. **Add the trained model**
-   Since the model file exceeds GitHub's size limit, download it separately and place it in the project root:
-   
+   Since the model file exceeds GitHub's size limit, download it separately and place it in the project root: https://drive.google.com/file/d/1k4HahNRC3KWnAJDu1VB1xVR0vWzlZnaw/view?usp=sharing
 
 5. **Run the app**
    ```bash

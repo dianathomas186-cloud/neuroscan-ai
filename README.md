@@ -122,7 +122,7 @@ neuroscan-ai/
 
 4. **Add the trained model**
    Since the model file exceeds GitHub's size limit, download it separately and place it in the project root:
-   👉 *(Add your Google Drive / Kaggle model download link here)*
+   
 
 5. **Run the app**
    ```bash
